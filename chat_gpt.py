@@ -1,9 +1,10 @@
 import openai
 import traceback
+import settings
 
 class ChatGpt:
 
-    API_KEY = "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"
+    API_KEY = settings.API_KEY
     MAX_TOKENS = 4097 - 100
     ATTEMPTS = 3
 
@@ -47,5 +48,5 @@ class ChatGpt:
                 print((str(e)))
                 traceback.print_exc()
 
-a = ChatGpt(prompt='Cartoon of a camel with cash')
-print(a.create_image())
+#a = ChatGpt(prompt="Create a feature image for Safari Sam online slot game Design a cartoon-style feature image that showcases the adventurous spirit of Safari Sam. The image should feature a happy Maya warrior with glasses, ready to explore the wilds of Africa. The warrior should be shown in a jeep with a camping tent in the background, surrounded by wild animals such as monkeys, zebras, and lions. The image should be vibrant and colorful, with a lively atmosphere that conveys the excitement of the game. Make sure to include the games title, Safari Sam, prominently in the image. Additionally, incorporate elements such as the games logo or symbols to tie it back to the game and entice players to give it a spin. The image should be eye-catching and memorable, making it a great asset for marketing the game.")
+#print(a.create_image())

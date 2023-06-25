@@ -2,13 +2,13 @@ import json
 import ast
 import os.path
 import traceback
-
+import time
 from chat_gpt import ChatGpt
 
 
 class TextManipulator:
-
     MAX_JSON_CONVERSION_TRIES = 3
+    MIN_SECONDS_PER_TASK = 5  # If a task is finished faster, we force a small wait to stay under the limit of 20 request per minute when running multiple tasks sequentially
 
     def __init__(self, filename=""):
         self.json_conversion_attempts = None
@@ -61,7 +61,7 @@ class TextManipulator:
         self.data[self.task_name].append(data)
 
     def convert_response_to_json(self, data=""):
-        self.json_conversion_attempts+=1
+        self.json_conversion_attempts += 1
         self.json_conversion_failed = False
         try:
             result = json.loads(data, strict=False)
@@ -83,14 +83,15 @@ class TextManipulator:
         response = self.chat_gpt.get_response()
         if self.json_response:
             response = self.convert_response_to_json(response)
-        data = {"version":  self.version,
+        data = {"version": self.version,
                 "response": response,
-                "role":     self.role,
-                "prompt":   self.prompt,
-                "log":      self.chat_gpt.task}
+                "role": self.role,
+                "prompt": self.prompt,
+                "log": self.chat_gpt.task}
         self.add_data_point(data)
-        if self.json_response and self.json_conversion_failed and self.json_conversion_attempts<TextManipulator.MAX_JSON_CONVERSION_TRIES:
-            print(f"Retrying to get data that is JSON convertable - attempt {self.json_conversion_attempts+1} / {TextManipulator.MAX_JSON_CONVERSION_TRIES}")
+        if self.json_response and self.json_conversion_failed and self.json_conversion_attempts < TextManipulator.MAX_JSON_CONVERSION_TRIES:
+            print(
+                f"Retrying to get data that is JSON convertable - attempt {self.json_conversion_attempts + 1} / {TextManipulator.MAX_JSON_CONVERSION_TRIES}")
             self.force_new = True
             return self.run_chat_gpt()
         return data
@@ -107,6 +108,11 @@ class TextManipulator:
     def run_task(self):
         result = self.retrieve_task()
         if self.force_new or result is None:
+            start_time = time.time()
             result = self.run_chat_gpt()
-
+            end_time = time.time()
+            if end_time - start_time < self.MIN_SECONDS_PER_TASK:
+                wait_time = self.MIN_SECONDS_PER_TASK - (end_time - start_time)
+                print(f"Waiting {round(wait_time,2)}s ...")
+                time.sleep(wait_time)
         return result
